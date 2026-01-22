@@ -123,7 +123,24 @@
         const sessionId = window.location.pathname.split('/').pop();
         document.getElementById('session-display').innerText += sessionId.substring(0, 8);
 
-        function sendMessage() {
+        // Load chat history on start
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch(`/api/chatbot/session/${sessionId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.messages && data.messages.length > 0) {
+                        const chatBox = document.getElementById('chat-box');
+                        chatBox.innerHTML = ''; // Clear default greeting if we have history
+                        data.messages.forEach(m => addMessage(m.message_text, m.sender));
+                    }
+                }
+            } catch (e) {
+                console.error("Could not load history", e);
+            }
+        });
+
+        async function sendMessage() {
             const input = document.getElementById('user-input');
             const text = input.value.trim();
             if (!text) return;
@@ -131,10 +148,24 @@
             addMessage(text, 'user');
             input.value = '';
 
-            // Simulate AI response
-            setTimeout(() => {
-                addMessage("That's interesting. How do you think we should start tackling that?", 'ai');
-            }, 1000);
+            try {
+                const response = await fetch('/api/chatbot/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        message_text: text
+                    })
+                });
+
+                const data = await response.json();
+                if (data.message_text) {
+                    addMessage(data.message_text, 'ai');
+                }
+            } catch (error) {
+                console.error("Error sending message:", error);
+                addMessage("I'm having trouble connecting to the brain. Please try again in a bit!", 'ai');
+            }
         }
 
         function addMessage(text, sender) {

@@ -1,10 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from datetime import datetime
 import uuid
-
 from fastapi.responses import HTMLResponse
 from pathlib import Path
+from sqlalchemy.orm import Session
+from app.database import SessionLocal, Task, TaskStep, get_db
 
 router = APIRouter()
 
@@ -17,13 +18,11 @@ class TaskInput(BaseModel):
     input_data: str
 
 @router.post("/api/tasker/input")
-async def process_task_input(data: TaskInput):
-    # 1. Generate session and task IDs
+async def process_task_input(data: TaskInput, db: Session = Depends(get_db)):
+    # 1. Generate session ID
     session_id = str(uuid.uuid4())
-    task_id = 101 # Mock ID from DB
     
     # 2. Mock AI Logic for static TODO list
-    # In production, this would call an AI module
     steps_text = [
         "Find all trash and put it in a bag",
         "Clear items off the floor",
@@ -31,21 +30,49 @@ async def process_task_input(data: TaskInput):
         "Dust the desk surfaces"
     ]
     
+    # 3. Create Task in DB
+    new_task = Task(
+        session_id=session_id,
+        input_method=data.input_method,
+        input_data=data.input_data,
+        task_title="Manual Task Deconstruction",
+        status="active"
+    )
+    db.add(new_task)
+    db.flush() # To get the task.id
+    
     steps_response = []
     for i, text in enumerate(steps_text):
+        new_step = TaskStep(
+            task_id=new_task.id,
+            step_index=i,
+            step_text=text,
+            is_completed=False,
+            status="active"
+        )
+        db.add(new_step)
         steps_response.append({
             "step_index": i,
             "step_text": text,
             "is_completed": False
         })
-        
-    # 3. Store in DB (Logic assumed in database.py)
-    # create_task(session_id, data.input_method, data.input_data)
-    # create_steps(task_id, steps_response)
+    
+    db.commit()
 
     return {
         "status": "success",
-        "task_id": task_id,
+        "task_id": new_task.id,
         "session_id": session_id,
         "steps": steps_response
     }
+
+@router.post("/api/tasker/done/{session_id}")
+async def tasker_done(session_id: str, db: Session = Depends(get_db)):
+    task = db.query(Task).filter(Task.session_id == session_id).first()
+    if not task:
+        return {"status": "error", "message": "Task not found"}
+    
+    task.status = "completed"
+    task.completed_at = datetime.utcnow()
+    db.commit()
+    return {"status": "ok"}

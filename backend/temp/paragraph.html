@@ -72,6 +72,9 @@
         <div id="content">
             Loading adapted content...
         </div>
+
+        <button id="done-btn" onclick="markComplete()"
+            style="margin-top: 40px; background: var(--accent); color: white; border: none; width: 100%; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">DONE</button>
     </div>
 
     <script>
@@ -88,6 +91,22 @@
                 <p>• Wipe down the counters with a damp cloth.</p>
             `;
         }, 1000);
+
+        async function markComplete() {
+            try {
+                const response = await fetch(`/api/paragraph/done/${sessionId}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    window.location.href = "/";
+                } else {
+                    alert("Error finalizing session.");
+                }
+            } catch (error) {
+                alert("Failed to finalize session. Is the backend running?");
+            }
+        }
     </script>
 </body>
 

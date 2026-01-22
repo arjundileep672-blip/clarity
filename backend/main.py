@@ -2,6 +2,10 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pathlib import Path
 from app import tasker, paragraph, chatbot
+from app.database import init_db
+
+# Initialize database tables
+init_db()
 
 app = FastAPI()
 
@@ -24,6 +28,10 @@ async def start_chatbot():
     from fastapi.responses import RedirectResponse
     session_id = str(uuid.uuid4())
     return RedirectResponse(url=f"/chat/{session_id}")
+
+@app.get("/meditate", response_class=HTMLResponse)
+async def read_meditate():
+    return HTMLResponse(content=Path("temp/meditate.html").read_text())
 
 if __name__ == "__main__":
     import uvicorn

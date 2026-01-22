@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pause & Breathe</title>
+    <style>
+        :root {
+            --bg-color: #fcfaf7;
+            --accent: #7b5ea1;
+            --text-main: #2d2d2d;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 40px 20px;
+            font-family: sans-serif;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-decoration: none;
+            color: #888;
+        }
+
+        .circle {
+            width: 200px;
+            height: 200px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.5rem;
+            animation: breathe 8s infinite ease-in-out;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(123, 94, 161, 0.3);
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.3);
+                opacity: 1;
+            }
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #666;
+            max-width: 400px;
+            line-height: 1.6;
+        }
+
+        .exercise {
+            margin-top: 40px;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 400px;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="/" class="back-link">← Home</a>
+
+    <div class="circle" id="breathe-circle">Breathe In</div>
+
+    <h1>Take a Moment</h1>
+    <p>It's okay to feel overwhelmed. Let's focus on your breath for a few seconds.</p>
+
+    <div class="exercise">
+        <h3 style="margin-top:0;">5-4-3-2-1 Grounding</h3>
+        <p style="font-size:0.9rem;">Look around and name:<br>
+            5 things you <b>see</b><br>
+            4 things you can <b>touch</b><br>
+            3 things you <b>hear</b><br>
+            2 things you can <b>smell</b><br>
+            1 thing you can <b>taste</b></p>
+    </div>
+
+    <script>
+        const circle = document.getElementById('breathe-circle');
+        setInterval(() => {
+            circle.innerText = circle.innerText === "Breathe In" ? "Breathe Out" : "Breathe In";
+        }, 4000);
+    </script>
+</body>
+
+</html>

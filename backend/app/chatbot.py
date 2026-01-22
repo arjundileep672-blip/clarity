@@ -1,11 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from datetime import datetime
 import uuid
 from typing import List, Optional
-
-# Assuming database logic is imported from database.py in a real scenario
-# from .database import SessionLocal, ChatSession, ChatMessage
+from sqlalchemy.orm import Session
+from app.database import ChatSession, ChatMessage, get_db
 
 from fastapi.responses import HTMLResponse
 from pathlib import Path
@@ -13,7 +12,13 @@ from pathlib import Path
 router = APIRouter()
 
 @router.get("/chat/{session_id}", response_class=HTMLResponse)
-async def get_chat_page(session_id: str):
+async def get_chat_page(session_id: str, db: Session = Depends(get_db)):
+    # Ensure session exists in DB
+    existing_session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+    if not existing_session:
+        new_session = ChatSession(id=session_id, module="chatbot", status="active")
+        db.add(new_session)
+        db.commit()
     return HTMLResponse(content=Path("temp/chat.html").read_text())
 
 # --- Request/Response Models ---
@@ -39,14 +44,15 @@ class ChatSessionResponse(BaseModel):
 # --- API Endpoints ---
 
 @router.post("/api/chatbot/session", response_model=ChatSessionResponse)
-async def create_chat_session(request: ChatStartRequest):
+async def create_chat_session(request: ChatStartRequest, db: Session = Depends(get_db)):
     """
     Step 1: Create a new chat session.
     """
     session_id = str(uuid.uuid4())
     
-    # Logic to insert into 'chat_sessions' table would go here:
-    # new_session = ChatSession(id=session_id, module=request.module, status="active")
+    new_session = ChatSession(id=session_id, module=request.module, status="active")
+    db.add(new_session)
+    db.commit()
     
     return {
         "session_id": session_id,
@@ -54,8 +60,31 @@ async def create_chat_session(request: ChatStartRequest):
         "messages": []
     }
 
+@router.get("/api/chatbot/session/{session_id}", response_model=ChatSessionResponse)
+async def get_chat_session(session_id: str, db: Session = Depends(get_db)):
+    """
+    Step 2: Retrieve an existing chat session with messages.
+    """
+    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    return {
+        "session_id": session.id,
+        "status": session.status,
+        "messages": [
+            {
+                "id": m.id,
+                "sender": m.sender,
+                "message_text": m.message_text,
+                "created_at": m.created_at
+            }
+            for m in session.messages
+        ]
+    }
+
 @router.post("/api/chatbot/message")
-async def send_message(data: MessageRequest):
+async def send_message(data: MessageRequest, db: Session = Depends(get_db)):
     """
     Flow: 
     1. Store user message
@@ -67,14 +96,17 @@ async def send_message(data: MessageRequest):
     user_text = data.message_text
 
     # 1. Store User Message in DB
-    # save_message(session_id, sender="user", text=user_text)
+    user_msg = ChatMessage(session_id=session_id, sender="user", message_text=user_text)
+    db.add(user_msg)
 
     # 2. Generate AI Reply (Socratic Logic)
-    # In a real scenario, this would call an AI utility module
     ai_reply_text = generate_socratic_reply(user_text)
 
     # 3. Store AI Message in DB
-    # save_message(session_id, sender="ai", text=ai_reply_text)
+    ai_msg = ChatMessage(session_id=session_id, sender="ai", message_text=ai_reply_text)
+    db.add(ai_msg)
+    
+    db.commit()
 
     return {
         "session_id": session_id,
