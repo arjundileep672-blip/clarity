@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provide Input</title>
+    <style>
+        :root {
+            --bg-color: #fcfaf7;
+            --card-bg: #ffffff;
+            --text-main: #2d2d2d;
+            --accent: #4a7c59;
+        }
+        body {
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            font-family: sans-serif;
+            color: var(--text-main);
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .back-link { text-decoration: none; color: #888; display: block; margin-bottom: 20px; }
+        h1 { margin-bottom: 20px; font-size: 1.4rem; }
+        
+        .input-group { margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        .input-group h3 { font-size: 0.9rem; text-transform: uppercase; color: #888; margin-bottom: 10px; }
+
+        textarea { width: 100%; height: 120px; border-radius: 12px; border: 1px solid #ddd; padding: 12px; font-size: 1rem; }
+        
+        .audio-btn {
+            background: #f0f0f0; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer;
+            display: flex; align-items: center; gap: 10px; font-weight: 600; width: 100%; justify-content: center;
+        }
+        .audio-btn.recording { background: #ffebeb; color: #d00; }
+
+        input[type="file"] { margin-top: 10px; }
+
+        .submit-btn {
+            background: var(--text-main); color: white; border: none; width: 100%;
+            padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .loading { text-align: center; display: none; margin-top: 20px; }
+        #result-area { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Cancel</a>
+        <h1 id="page-title">Loading...</h1>
+
+        <!-- Method 1: Text -->
+        <div class="input-group">
+            <h3>Option 1: Type or Paste</h3>
+            <textarea id="text-input" placeholder="Enter your text here..."></textarea>
+        </div>
+
+        <!-- Method 2: Audio -->
+        <div class="input-group">
+            <h3>Option 2: Speak</h3>
+            <button id="record-btn" class="audio-btn" onclick="toggleRecording()">
+                <span>🎤 Start Recording</span>
+            </button>
+            <p id="audio-status" style="font-size: 0.8rem; margin-top: 5px; color: #888;"></p>
+        </div>
+
+        <!-- Method 3: Image -->
+        <div class="input-group">
+            <h3>Option 3: Photo</h3>
+            <input type="file" id="image-input" accept="image/*">
+        </div>
+
+        <button class="submit-btn" onclick="submitInput()">Submit</button>
+        
+        <div id="loading" class="loading">Processing...</div>
+        <div id="result-area"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const moduleType = urlParams.get('module') || 'tasker';
+        const pageTitle = document.getElementById('page-title');
+        pageTitle.innerText = moduleType === 'tasker' ? 'Break Down Task' : 'Sensory Reader';
+
+        let isRecording = false;
+        let finalInputData = "";
+        let finalInputMethod = "paragraph";
+
+        function toggleRecording() {
+            const btn = document.getElementById('record-btn');
+            const status = document.getElementById('audio-status');
+            isRecording = !isRecording;
+            
+            if (isRecording) {
+                btn.innerHTML = "<span>🛑 Stop & Convert</span>";
+                btn.classList.add('recording');
+                status.innerText = "Listening... (Simulated)";
+            } else {
+                btn.innerHTML = "<span>🎤 Start Recording</span>";
+                btn.classList.remove('recording');
+                status.innerText = "Audio converted to text.";
+                // Mocking Speech-to-Text
+                document.getElementById('text-input').value = "Clean the kitchen and organize the spice rack.";
+                finalInputMethod = "audio";
+            }
+        }
+
+        async function submitInput() {
+            const textVal = document.getElementById('text-input').value;
+            const fileInput = document.getElementById('image-input');
+            
+            // Logic to determine which data to send
+            if (fileInput.files.length > 0) {
+                finalInputMethod = "image";
+                finalInputData = "Content from image: " + fileInput.files[0].name; // Mock OCR
+            } else {
+                finalInputData = textVal;
+                // Method already set by audio toggle or default to paragraph
+            }
+
+            if (!finalInputData) {
+                alert("Please provide some input first!");
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            const endpoint = moduleType === 'tasker' ? '/api/tasker/input' : '/api/reader/input';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        input_method: finalInputMethod,
+                        input_data: finalInputData
+                    })
+                });
+
+                const data = await response.json();
+                renderResult(data);
+            } catch (error) {
+                alert("Submission failed. Is the backend running?");
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function renderResult(data) {
+            const area = document.getElementById('result-area');
+            if (moduleType === 'tasker') {
+                let html = `<h3>Steps:</h3><ul>`;
+                data.steps.forEach(s => html += `<li><input type="checkbox"> ${s.step_text}</li>`);
+                html += `</ul>`;
+                area.innerHTML = html;
+            } else {
+                area.innerHTML = `<h3>Simplified Reading:</h3><div style="line-height:1.6; background:#f9f9f9; padding:15px; border-radius:10px;">${data.output_text}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
