@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,7 +30,7 @@
             background-color: var(--bg-color);
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             min-height: 100vh;
             color: var(--text-main);
             padding: 20px;
@@ -43,7 +42,6 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            margin-top: 40px;
         }
 
         h1 {
@@ -54,6 +52,7 @@
             color: var(--text-main);
         }
 
+        /* The 3 Long Bars (Buttons) */
         .menu-button {
             display: flex;
             align-items: center;
@@ -65,13 +64,15 @@
             transition: transform 0.1s ease, background-color 0.2s ease;
             text-align: left;
             width: 100%;
-            text-decoration: none;
-            color: inherit;
         }
 
         .menu-button:hover {
             background-color: #ede8df;
             transform: scale(1.01);
+        }
+
+        .menu-button:active {
+            transform: scale(0.99);
         }
 
         .icon-box {
@@ -108,6 +109,7 @@
             margin-left: 8px;
         }
 
+        /* Bottom "Overwhelmed" Button */
         .footer-button {
             margin-top: 12px;
             background-color: var(--accent-purple);
@@ -121,11 +123,15 @@
             font-weight: 600;
             font-size: 1rem;
             cursor: pointer;
+            transition: background-color 0.2s ease;
             width: 100%;
-            text-decoration: none;
-            color: inherit;
         }
 
+        .footer-button:hover {
+            background-color: #dfceef;
+        }
+
+        /* SVG Icons Styling */
         svg {
             width: 24px;
             height: 24px;
@@ -134,30 +140,19 @@
             stroke: currentColor;
         }
 
-        .green {
-            background-color: var(--icon-green);
-            color: var(--icon-green-dark);
-        }
+        .green { background-color: var(--icon-green); color: var(--icon-green-dark); }
+        .blue { background-color: var(--icon-blue); color: var(--icon-blue-dark); }
+        .purple { background-color: var(--icon-purple); color: var(--icon-purple-dark); }
 
-        .blue {
-            background-color: var(--icon-blue);
-            color: var(--icon-blue-dark);
-        }
-
-        .purple {
-            background-color: var(--icon-purple);
-            color: var(--icon-purple-dark);
-        }
     </style>
 </head>
-
 <body>
 
     <div class="container">
         <h1>What do you want help with today?</h1>
 
-        <!-- Module 1: Task Deconstructor -->
-        <a href="/input?module=tasker" class="menu-button">
+        <!-- Button 1: Break Down a Task -->
+        <button class="menu-button">
             <div class="icon-box green">
                 <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -173,10 +168,10 @@
                 <span class="subtitle">Turn big assignments into small, manageable steps</span>
             </div>
             <div class="chevron">›</div>
-        </a>
+        </button>
 
-        <!-- Module 2: Sensory-Safe Reader (Redirects to /input?module=paragraph) -->
-        <a href="/input?module=paragraph" class="menu-button">
+        <!-- Button 2: Read Safely -->
+        <button class="menu-button">
             <div class="icon-box blue">
                 <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
@@ -188,10 +183,10 @@
                 <span class="subtitle">Sensory-friendly reading with customizable settings</span>
             </div>
             <div class="chevron">›</div>
-        </a>
+        </button>
 
-        <!-- Module 3: Simple Chatbot (Redirects to /chatbot to generate session) -->
-        <a href="/chatbot" class="menu-button">
+        <!-- Button 3: Socratic Buddy -->
+        <button class="menu-button">
             <div class="icon-box purple">
                 <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -202,18 +197,26 @@
                 <span class="subtitle">Get step-by-step help through guided questions</span>
             </div>
             <div class="chevron">›</div>
-        </a>
+        </button>
 
-        <!-- Overwhelmed Footer (Now points to /meditate) -->
-        <a href="/meditate" class="footer-button">
+        <!-- Bottom Button: Overwhelmed -->
+        <button class="footer-button">
             <svg viewBox="0 0 24 24" style="fill: currentColor; stroke: none;">
-                <path
-                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
             </svg>
             I'm feeling overwhelmed
-        </a>
+        </button>
     </div>
 
+    <script>
+        // Optional: Adding click logging to verify buttons work
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const text = btn.querySelector('.title')?.innerText || btn.innerText;
+                console.log('Clicked:', text.trim());
+            });
+        });
+    </script>
 </body>
-
 </html>
