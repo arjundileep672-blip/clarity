@@ -1,89 +1,93 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-/// Typography system for Clarity app
-/// Large, readable fonts with increased line height and letter spacing
 class AppTextStyles {
-  AppTextStyles._(); // Private constructor
+  AppTextStyles._();
 
-  // Font family (can be switched to OpenDyslexic)
-  static const String defaultFontFamily = 'System';
-  static const String dyslexicFontFamily = 'OpenDyslexic';
+  static TextTheme getTextTheme({String? fontFamily}) {
+    final textStyle = fontFamily != null ? TextStyle(fontFamily: fontFamily) : const TextStyle();
 
-  // Display styles - For main headers
+    return TextTheme(
+      displayLarge: GoogleFonts.sourceSans3(
+        fontSize: 32,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.5,
+      ).merge(textStyle),
+      displayMedium: GoogleFonts.sourceSans3(
+        fontSize: 28,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.5,
+      ).merge(textStyle),
+      headlineMedium: GoogleFonts.sourceSans3(
+        fontSize: 24,
+        fontWeight: FontWeight.w500,
+      ).merge(textStyle),
+      titleLarge: GoogleFonts.sourceSans3(
+        fontSize: 20,
+        fontWeight: FontWeight.w500,
+      ).merge(textStyle),
+      bodyLarge: GoogleFonts.sourceSans3(
+        fontSize: 18,
+        fontWeight: FontWeight.w400,
+        height: 1.6,
+      ).merge(textStyle),
+      bodyMedium: GoogleFonts.sourceSans3(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        height: 1.6,
+      ).merge(textStyle),
+      labelLarge: GoogleFonts.sourceSans3(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+      ).merge(textStyle),
+      bodySmall: GoogleFonts.sourceSans3(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+      ).merge(textStyle),
+    );
+  }
+
   static const TextStyle displayLarge = TextStyle(
-    fontSize: 32.0,
+    fontSize: 32,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.5,
-    height: 1.3,
-    color: AppColors.textPrimary,
   );
 
   static const TextStyle displayMedium = TextStyle(
-    fontSize: 28.0,
+    fontSize: 28,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.5,
-    height: 1.3,
-    color: AppColors.textPrimary,
   );
 
-  // Headline - For section headers
   static const TextStyle headline = TextStyle(
-    fontSize: 24.0,
+    fontSize: 24,
     fontWeight: FontWeight.w500,
-    letterSpacing: 0.25,
-    height: 1.4,
-    color: AppColors.textPrimary,
   );
 
-  // Title - For card titles
   static const TextStyle title = TextStyle(
-    fontSize: 20.0,
+    fontSize: 20,
     fontWeight: FontWeight.w500,
-    letterSpacing: 0.15,
-    height: 1.4,
-    color: AppColors.textPrimary,
   );
 
-  // Body styles - For main content
   static const TextStyle bodyLarge = TextStyle(
-    fontSize: 18.0,
+    fontSize: 18,
     fontWeight: FontWeight.w400,
     height: 1.6,
-    color: AppColors.textPrimary,
   );
 
   static const TextStyle body = TextStyle(
-    fontSize: 16.0,
+    fontSize: 16,
     fontWeight: FontWeight.w400,
     height: 1.6,
-    color: AppColors.textPrimary,
   );
 
-  // Label - For buttons and labels
   static const TextStyle label = TextStyle(
-    fontSize: 14.0,
+    fontSize: 14,
     fontWeight: FontWeight.w500,
-    letterSpacing: 0.5,
-    height: 1.4,
-    color: AppColors.textPrimary,
   );
 
-  // Caption - For helper text
   static const TextStyle caption = TextStyle(
-    fontSize: 12.0,
+    fontSize: 12,
     fontWeight: FontWeight.w400,
-    height: 1.4,
-    color: AppColors.textSecondary,
   );
-
-  // Helper method to apply font family
-  static TextStyle withFontFamily(
-    TextStyle style, {
-    bool useDyslexicFont = false,
-  }) {
-    return style.copyWith(
-      fontFamily: useDyslexicFont ? dyslexicFontFamily : defaultFontFamily,
-    );
-  }
 }

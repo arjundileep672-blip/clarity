@@ -7,7 +7,7 @@ import 'app_spacing.dart';
 class AppTheme {
   AppTheme._(); // Private constructor
 
-  static ThemeData get lightTheme {
+  static ThemeData getTheme({String? fontFamily}) {
     return ThemeData(
       useMaterial3: true,
 
@@ -30,12 +30,12 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.background,
 
       // App bar theme
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: AppTextStyles.headline,
+        titleTextStyle: AppTextStyles.getTextTheme(fontFamily: fontFamily).headlineMedium,
       ),
 
       // Card theme
@@ -65,7 +65,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
           ),
           elevation: 0,
-          textStyle: AppTextStyles.label.copyWith(fontSize: 16),
+          textStyle: AppTextStyles.getTextTheme(fontFamily: fontFamily).labelLarge?.copyWith(fontSize: 16),
         ),
       ),
 
@@ -81,7 +81,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
           ),
-          textStyle: AppTextStyles.label.copyWith(fontSize: 16),
+          textStyle: AppTextStyles.getTextTheme(fontFamily: fontFamily).labelLarge?.copyWith(fontSize: 16),
         ),
       ),
 
@@ -116,8 +116,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
-        labelStyle: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
-        hintStyle: AppTextStyles.body.copyWith(color: AppColors.textTertiary),
+        labelStyle: AppTextStyles.getTextTheme(fontFamily: fontFamily).bodyMedium?.copyWith(color: AppColors.textSecondary),
+        hintStyle: AppTextStyles.getTextTheme(fontFamily: fontFamily).bodyMedium?.copyWith(color: AppColors.textTertiary),
       ),
 
       // Checkbox theme
@@ -149,16 +149,7 @@ class AppTheme {
       ),
 
       // Text theme
-      textTheme: const TextTheme(
-        displayLarge: AppTextStyles.displayLarge,
-        displayMedium: AppTextStyles.displayMedium,
-        headlineMedium: AppTextStyles.headline,
-        titleLarge: AppTextStyles.title,
-        bodyLarge: AppTextStyles.bodyLarge,
-        bodyMedium: AppTextStyles.body,
-        labelLarge: AppTextStyles.label,
-        bodySmall: AppTextStyles.caption,
-      ),
+      textTheme: AppTextStyles.getTextTheme(fontFamily: fontFamily),
     );
   }
 }

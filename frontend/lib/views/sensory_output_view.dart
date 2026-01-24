@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
-import '../theme/app_text_styles.dart';
 import '../viewmodels/settings_viewmodel.dart';
+import '../widgets/bionic_text.dart';
 import '../widgets/primary_button.dart';
 
 class SensoryOutputView extends StatelessWidget {
@@ -32,6 +32,12 @@ class SensoryOutputView extends StatelessWidget {
     // Fallback if text is empty
     final displayText = text.trim().isEmpty ? 'No text to read.' : text;
 
+    final textStyle = TextStyle(
+      fontSize: settings.fontSize.toPixels(),
+      height: 1.8,
+      color: AppColors.textPrimary,
+    );
+
     return Scaffold(
       backgroundColor: _getBackgroundColor(settings.backgroundColor.name),
       appBar: AppBar(
@@ -50,23 +56,11 @@ class SensoryOutputView extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppSpacing.l),
-                child: Text(
-                  displayText,
-                  style: TextStyle(
-                    fontSize: settings.fontSize.toPixels(),
-                    height: 1.8,
-                    color: AppColors.textPrimary,
-                    fontWeight: settings.useBionicReading
-                        ? FontWeight.w500
-                        : FontWeight.w400,
-                    fontFamily: settings.useOpenDyslexic
-                        ? 'OpenDyslexic'
-                        : null,
-                  ),
-                ),
+                child: settings.useBionicReading
+                    ? BionicText(displayText, style: textStyle)
+                    : Text(displayText, style: textStyle),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(AppSpacing.m),
               child: AppButton(
@@ -76,7 +70,10 @@ class SensoryOutputView extends StatelessWidget {
                     SnackBar(
                       content: Text(
                         'Text-to-speech coming soon!',
-                        style: AppTextStyles.body.copyWith(color: Colors.white),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium!
+                            .copyWith(color: Colors.white),
                       ),
                       backgroundColor: AppColors.secondary,
                       behavior: SnackBarBehavior.floating,

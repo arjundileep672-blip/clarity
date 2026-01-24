@@ -4,22 +4,38 @@ import 'theme/app_theme.dart';
 import 'views/home_view.dart';
 import 'viewmodels/settings_viewmodel.dart';
 
-void main() {
-  runApp(const ClarityApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final settingsViewModel = SettingsViewModel();
+  await settingsViewModel.loadSettings();
+
+  runApp(ClarityApp(settingsViewModel: settingsViewModel));
 }
 
 class ClarityApp extends StatelessWidget {
-  const ClarityApp({super.key});
+  final SettingsViewModel settingsViewModel;
+
+  const ClarityApp({super.key, required this.settingsViewModel});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => SettingsViewModel(),
-      child: MaterialApp(
-        title: 'Clarity',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const HomeView(),
+    return ChangeNotifierProvider.value(
+      value: settingsViewModel,
+      child: Consumer<SettingsViewModel>(
+        builder: (context, settings, child) {
+          return MaterialApp(
+            title: 'Clarity',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.getTheme(
+              fontFamily: settings.useOpenDyslexic
+                  ? 'OpenDyslexic'
+                  : settings.useBionicReading
+                      ? 'AtkinsonHyperlegible'
+                      : null,
+            ),
+            home: const HomeView(),
+          );
+        },
       ),
     );
   }

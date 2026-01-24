@@ -10,12 +10,10 @@ class SettingsViewModel extends ChangeNotifier {
   SharedPreferences? _prefs;
 
   ReaderSettings get settings => _settings;
+  bool get useOpenDyslexic => _settings.useOpenDyslexic;
+  bool get useBionicReading => _settings.useBionicReading;
 
-  SettingsViewModel() {
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
+  Future<void> loadSettings() async {
     _prefs = await SharedPreferences.getInstance();
     final String? settingsJson = _prefs?.getString(_settingsKey);
 
