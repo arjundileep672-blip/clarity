@@ -1,6 +1,13 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file BEFORE importing other modules
+# This makes os.getenv("GEMINI_API_KEY") available in app/chatbot.py
+load_dotenv()
+
 from app import tasker, paragraph, chatbot
 from app.database import init_db
 
@@ -22,12 +29,11 @@ async def read_index():
 async def read_input():
     return HTMLResponse(content=Path("temp/input.html").read_text())
 
+# Navigation Flow: Redirects to the chatbot start logic
 @app.get("/chatbot")
-async def start_chatbot():
-    import uuid
+async def start_chatbot_redirect():
     from fastapi.responses import RedirectResponse
-    session_id = str(uuid.uuid4())
-    return RedirectResponse(url=f"/chat/{session_id}")
+    return RedirectResponse(url="/chat/start")
 
 @app.get("/meditate", response_class=HTMLResponse)
 async def read_meditate():

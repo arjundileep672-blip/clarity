@@ -1,0 +1,76 @@
+
+Module 1: The "Task Deconstructor" (Executive Function Support)
+
+    The Problem: A student looks at an assignment like "Write an essay on Rome" and freezes because it looks like one giant, impossible mountain.
+
+    The Solution: An AI that breaks the mountain into tiny, climbable steps.
+
+    How it works (Tech Stack):
+
+        Input (Flutter): The student types "I have to write an essay on Rome" or takes a photo of the assignment (using google_ml_kit for OCR if you're ambitious, or just text input).
+
+        Processing (Gemini API): You send this to Gemini with a specific system instruction: "You are an executive function coach. Break this task down into 5-10 incredibly small, actionable steps. Estimate the time for each. Return valid JSON."
+
+        Output (Flutter): Your app renders a Gamified Checklist. As they check off "Open Google Docs" (Step 1), the bar fills up.
+
+        Audio (Google TTS): A calming voice reads the current step only, so they don't get overwhelmed by the whole list.
+
+
+Module 2: The "Sensory-Safe Reader" (Dyslexia & Focus Support)
+
+    The Problem: Walls of text cause anxiety or are hard to read.
+
+    The Solution: A tool that rewrites and speaks content in a "safe" format.
+
+    How it works (Tech Stack):
+
+        Input: User pastes a paragraph from their textbook.
+
+        Processing (Gemini API): Ask Gemini to "Summarize this into bullet points using simple language" or "Rewrite this to be more engaging."
+
+        Output (Flutter): Display the text with customizable accessibility features:
+
+            OpenDyslexic font toggle.
+
+            "Bionic Reading" (bolding the first few letters of words).
+
+            Pastel background colors (creams/mints) instead of harsh white.
+
+        Audio (Google TTS): The user can click any paragraph to have it read aloud while the word being spoken is highlighted (Karaoke style).
+
+Module 3: The "Socratic Buddy" (Anxiety-Free Tutoring)
+
+    The Problem: Students are afraid to ask "dumb questions" or get frustrated when they don't understand immediately.
+
+    The Solution: A patience-infinite AI companion.
+
+    How it works (Tech Stack):
+
+        System Instruction (Gemini): This is the secret sauce. Set the system instruction to: "You are a patient, encouraging tutor. Do not give the answer immediately. Ask guiding questions. If the student gets it wrong, say 'That's a great guess, but think about...' Use emojis to be friendly."
+
+        Voice Interaction: Use Speech-to-Text (Google has a Flutter plugin for this) so the student can talk to the app instead of typing (typing requires more executive function).
+
+        Feedback Loop: If the student seems frustrated (detectable via text sentiment or just them saying "I give up"), the AI switches modes to offer encouragement or a break.
+
+
+Technical Architecture for Your Project
+
+Since you are using Flutter and Google Tech, keep it clean:
+
+    Frontend: Flutter (Mobile).
+
+    Backend Logic: You don't need a heavy backend. You can call the Gemini API directly from Flutter (using the google_generative_ai package).
+
+    Audio: google_speech or standard HTTP calls to Google Cloud TTS API.
+
+    State Management: Use Provider or Riverpod (whichever you know) to manage the checklist state.
+
+Recommended "Hackathon Winning" Feature: "The Panic Button"
+
+Add a big, friendly button on the home screen.
+
+    Action: When pressed, it hides everything.
+
+    Response: Gemini generates a random "grounding exercise" (e.g., "Find 5 blue things in the room" or "Let's take 3 deep breaths").
+
+    Why: It shows you understand the emotional side of neurodivergence, not just the academic side.

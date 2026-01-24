@@ -1,147 +1,133 @@
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
-from datetime import datetime
 import uuid
-from typing import List, Optional
+import asyncio
+import httpx
+import os
+from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi.responses import RedirectResponse, FileResponse
 from sqlalchemy.orm import Session
-from app.database import ChatSession, ChatMessage, get_db
+from datetime import datetime
 
-from fastapi.responses import HTMLResponse
-from pathlib import Path
+# Import existing models and DB config from your project
+from app.database import SessionLocal, ChatSession, ChatMessage
 
 router = APIRouter()
 
-@router.get("/chat/{session_id}", response_class=HTMLResponse)
-async def get_chat_page(session_id: str, db: Session = Depends(get_db)):
-    # Ensure session exists in DB
-    existing_session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
-    if not existing_session:
-        new_session = ChatSession(id=session_id, module="chatbot", status="active")
-        db.add(new_session)
-        db.commit()
-    return HTMLResponse(content=Path("temp/chat.html").read_text())
+# --- Configuration ---
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent"
 
-# --- Request/Response Models ---
+# Retrieve API Key from environment variables loaded in main.py
+API_KEY = os.getenv("GEMINI_API_KEY")
 
-class ChatStartRequest(BaseModel):
-    module: str = "chatbot"
+# Dependency to get DB session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-class MessageRequest(BaseModel):
-    session_id: str
-    message_text: str
-
-class ChatMessageResponse(BaseModel):
-    id: int
-    sender: str
-    message_text: str
-    created_at: datetime
-
-class ChatSessionResponse(BaseModel):
-    session_id: str
-    status: str
-    messages: List[ChatMessageResponse]
-
-# --- API Endpoints ---
-
-@router.post("/api/chatbot/session", response_model=ChatSessionResponse)
-async def create_chat_session(request: ChatStartRequest, db: Session = Depends(get_db)):
-    """
-    Step 1: Create a new chat session.
-    """
+# 1) START CHAT: Generate session and redirect (Strict Navigation Flow)
+@router.get("/chat/start")
+async def start_chat(db: Session = Depends(get_db)):
     session_id = str(uuid.uuid4())
     
-    new_session = ChatSession(id=session_id, module=request.module, status="active")
+    new_session = ChatSession(
+        id=session_id,
+        module="chatbot",
+        status="active",
+        created_at=datetime.utcnow()
+    )
+    
     db.add(new_session)
     db.commit()
     
-    return {
-        "session_id": session_id,
-        "status": "active",
-        "messages": []
-    }
+    # Redirect to the dynamic chat page
+    return RedirectResponse(url=f"/chat/{session_id}")
 
-@router.get("/api/chatbot/session/{session_id}", response_model=ChatSessionResponse)
-async def get_chat_session(session_id: str, db: Session = Depends(get_db)):
-    """
-    Step 2: Retrieve an existing chat session with messages.
-    """
+# 2) SERVE CHAT PAGE: Serve the static HTML file
+@router.get("/chat/{session_id}")
+async def serve_chat_page(session_id: str, db: Session = Depends(get_db)):
+    # Verify session exists in DB before serving the page
+    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    
+    return FileResponse("temp/chat.html")
+
+# 3) HANDLE CHAT MESSAGE: Logic, AI Call, and Storage
+@router.post("/api/chat/message")
+async def handle_message(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    session_id = data.get("session_id")
+    user_text = data.get("message")
+
+    if not session_id or not user_text:
+        raise HTTPException(status_code=400, detail="Missing session_id or message")
+
+    # Validate session
     session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    
-    return {
-        "session_id": session.id,
-        "status": session.status,
-        "messages": [
-            {
-                "id": m.id,
-                "sender": m.sender,
-                "message_text": m.message_text,
-                "created_at": m.created_at
-            }
-            for m in session.messages
-        ]
-    }
 
-@router.post("/api/chatbot/message")
-async def send_message(data: MessageRequest, db: Session = Depends(get_db)):
-    """
-    Flow: 
-    1. Store user message
-    2. Get AI reply (Socratic/Guided)
-    3. Store AI message
-    4. Return AI response
-    """
-    session_id = data.session_id
-    user_text = data.message_text
-
-    # 1. Store User Message in DB
-    user_msg = ChatMessage(session_id=session_id, sender="user", message_text=user_text)
+    # Save User Message to SQLite
+    user_msg = ChatMessage(
+        session_id=session_id,
+        sender="user",
+        message_text=user_text,
+        created_at=datetime.utcnow()
+    )
     db.add(user_msg)
-
-    # 2. Generate AI Reply (Socratic Logic)
-    ai_reply_text = generate_socratic_reply(user_text)
-
-    # 3. Store AI Message in DB
-    ai_msg = ChatMessage(session_id=session_id, sender="ai", message_text=ai_reply_text)
-    db.add(ai_msg)
-    
     db.commit()
 
-    return {
-        "session_id": session_id,
-        "sender": "ai",
-        "message_text": ai_reply_text,
-        "created_at": datetime.now()
+    # Call Gemini AI (Backend only)
+    ai_reply = await call_gemini_api(user_text)
+
+    # Save AI Reply to SQLite
+    ai_msg = ChatMessage(
+        session_id=session_id,
+        sender="ai",
+        message_text=ai_reply,
+        created_at=datetime.utcnow()
+    )
+    db.add(ai_msg)
+    db.commit()
+
+    return {"reply": ai_reply}
+
+async def call_gemini_api(user_prompt: str):
+    """Calls Gemini API with exponential backoff retries."""
+    if not API_KEY:
+        return "Configuration Error: GEMINI_API_KEY is missing from the environment."
+
+    system_prompt = "You are a helpful assistant. Keep answers concise."
+    payload = {
+        "contents": [{"parts": [{"text": user_prompt}]}],
+        "systemInstruction": {"parts": [{"text": system_prompt}]}
     }
 
-@router.post("/api/chatbot/end")
-async def end_chat_session(session_id: str):
-    """
-    Mark a session as ended and record the timestamp.
-    """
-    # Logic to update 'chat_sessions' table:
-    # update chat_sessions set status='ended', ended_at=now() where id=session_id
+    async with httpx.AsyncClient() as client:
+        for attempt in range(6): 
+            try:
+                response = await client.post(
+                    f"{GEMINI_API_URL}?key={API_KEY}",
+                    json=payload,
+                    timeout=20.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "No response generated.")
+                
+                # Retry on rate limit or server errors
+                if response.status_code in [429, 500, 503]:
+                    await asyncio.sleep(2 ** attempt)
+                    continue
+                
+                # Log other errors
+                print(f"API Error: {response.status_code} - {response.text}")
+                break
+            except Exception as e:
+                print(f"Connection Error: {str(e)}")
+                await asyncio.sleep(2 ** attempt)
     
-    return {"status": "success", "session_id": session_id, "message": "Session ended"}
-
-# --- Helper Logic (Simulated AI) ---
-
-def generate_socratic_reply(user_input: str) -> str:
-    """
-    Simulates a Socratic AI response. 
-    Instead of giving answers, it asks guided questions.
-    """
-    input_lower = user_input.lower()
-    
-    if "don't know" in input_lower or "help" in input_lower:
-        return "That's okay! What is the very first step you think you might need to take?"
-    
-    if "essay" in input_lower or "write" in input_lower:
-        return "If you had to explain the main idea of your writing to a friend in one sentence, what would you say?"
-    
-    if "math" in input_lower or "problem" in input_lower:
-        return "Before we look at the numbers, what is this problem asking us to find?"
-
-    # Default Socratic nudge
-    return "Interesting. What makes you say that, and how does it relate to your goal?"
+    return "The assistant is temporarily unavailable. Please try again later."

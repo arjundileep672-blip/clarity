@@ -1,182 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Socratic Chatbot</title>
+    <title>Chatbot Session</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --bg-color: #fcfaf7;
-            --card-bg: #ffffff;
-            --text-main: #2d2d2d;
-            --accent: #7b5ea1;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 0;
-            font-family: sans-serif;
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        .header {
-            padding: 20px;
-            background: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .back-link {
-            text-decoration: none;
-            color: #888;
-        }
-
-        .chat-container {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .message {
-            max-width: 80%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            line-height: 1.4;
-        }
-
-        .message.ai {
-            align-self: flex-start;
-            background: #f0e6f7;
-            color: #4a4a4a;
-            border-bottom-left-radius: 4px;
-        }
-
-        .message.user {
-            align-self: flex-end;
-            background: var(--accent);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-
-        .input-area {
-            padding: 20px;
-            background: white;
-            display: flex;
-            gap: 10px;
-        }
-
-        input {
-            flex: 1;
-            padding: 12px;
-            border-radius: 25px;
-            border: 1px solid #ddd;
-            outline: none;
-        }
-
-        button {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 0 20px;
-            border-radius: 25px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .session-info {
-            font-size: 0.7rem;
-            color: #aaa;
-        }
+        .chat-container { height: calc(100vh - 160px); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .message-bubble { word-wrap: break-word; overflow-wrap: break-word; }
     </style>
 </head>
+<body class="bg-gray-50 font-sans">
 
-<body>
-    <div class="header">
-        <a href="/" class="back-link">← Back</a>
-        <div style="text-align: right;">
-            <div style="font-weight: 700;">Socratic Buddy</div>
-            <div class="session-info" id="session-display">ID: </div>
+    <!-- Simple Header -->
+    <header class="bg-white border-b p-4 flex justify-between items-center shadow-sm sticky top-0 z-10">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold">C</div>
+            <h1 class="text-xl font-bold text-gray-800">Chatbot</h1>
         </div>
-    </div>
+        <div id="session-display" class="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-1 rounded">
+            Session: Loading...
+        </div>
+    </header>
 
-    <div class="chat-container" id="chat-box">
-        <div class="message ai">Hi! I'm your Socratic Buddy. What's on your mind today?</div>
-    </div>
+    <!-- Chat Messages Area -->
+    <main id="chat-window" class="chat-container overflow-y-auto p-4 md:p-8 space-y-4 hide-scrollbar">
+        <!-- Initial Connection Message -->
+        <div class="flex justify-start">
+            <div class="bg-white border rounded-lg p-3 max-w-[85%] md:max-w-md shadow-sm">
+                <p class="text-sm text-gray-600 italic">Connected to session. How can I help you today?</p>
+            </div>
+        </div>
+    </main>
 
-    <div class="input-area">
-        <input type="text" id="user-input" placeholder="Type your message..."
-            onkeypress="if(event.key==='Enter') sendMessage()">
-        <button onclick="sendMessage()">Send</button>
-    </div>
+    <!-- Input Area -->
+    <footer class="fixed bottom-0 w-full bg-white border-t p-4">
+        <form id="chat-form" class="max-w-4xl mx-auto flex gap-2">
+            <input 
+                type="text" 
+                id="message-input" 
+                placeholder="Type your message..." 
+                class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all"
+                autocomplete="off"
+                required
+            >
+            <button 
+                type="submit" 
+                id="send-btn"
+                class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 shadow-md"
+            >
+                Send
+            </button>
+        </form>
+    </footer>
 
     <script>
-        const sessionId = window.location.pathname.split('/').pop();
-        document.getElementById('session-display').innerText += sessionId.substring(0, 8);
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const sessionDisplay = document.getElementById('session-display');
 
-        // Load chat history on start
-        window.addEventListener('DOMContentLoaded', async () => {
+        // Extract session_id from URL path: /chat/<session_id>
+        const pathParts = window.location.pathname.split('/');
+        const sessionId = pathParts[pathParts.length - 1];
+        
+        // Display truncated session ID
+        if (sessionId && sessionId !== 'chat') {
+            sessionDisplay.textContent = `Session: ${sessionId.substring(0, 8)}...`;
+        } else {
+            sessionDisplay.textContent = "Session: No ID";
+        }
+
+        /**
+         * Appends a message to the UI
+         * @param {string} text 
+         * @param {'user' | 'ai'} sender 
+         */
+        function appendMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`;
+            
+            const inner = document.createElement('div');
+            inner.className = `message-bubble p-3 rounded-lg max-w-[85%] md:max-w-md shadow-sm ${
+                sender === 'user' 
+                    ? 'bg-blue-600 text-white rounded-br-none' 
+                    : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'
+            }`;
+            inner.textContent = text;
+            
+            div.appendChild(inner);
+            chatWindow.appendChild(div);
+            
+            // Auto-scroll to bottom
+            chatWindow.scrollTo({
+                top: chatWindow.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = messageInput.value.trim();
+            if (!msg) return;
+
+            // Update UI immediately
+            appendMessage(msg, 'user');
+            messageInput.value = '';
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+
+            // Add temporary loading indicator
+            const loaderId = 'loader-' + Date.now();
+            const loaderDiv = document.createElement('div');
+            loaderDiv.id = loaderId;
+            loaderDiv.className = 'flex justify-start';
+            loaderDiv.innerHTML = `
+                <div class="bg-gray-100 p-3 rounded-lg text-xs text-gray-400 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                    <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                    <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                </div>`;
+            chatWindow.appendChild(loaderDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
             try {
-                const response = await fetch(`/api/chatbot/session/${sessionId}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.messages && data.messages.length > 0) {
-                        const chatBox = document.getElementById('chat-box');
-                        chatBox.innerHTML = ''; // Clear default greeting if we have history
-                        data.messages.forEach(m => addMessage(m.message_text, m.sender));
-                    }
-                }
-            } catch (e) {
-                console.error("Could not load history", e);
-            }
-        });
-
-        async function sendMessage() {
-            const input = document.getElementById('user-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            addMessage(text, 'user');
-            input.value = '';
-
-            try {
-                const response = await fetch('/api/chatbot/message', {
+                // Post to the backend API defined in app/chat.py
+                const response = await fetch('/api/chat/message', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         session_id: sessionId,
-                        message_text: text
+                        message: msg
                     })
                 });
 
-                const data = await response.json();
-                if (data.message_text) {
-                    addMessage(data.message_text, 'ai');
-                }
-            } catch (error) {
-                console.error("Error sending message:", error);
-                addMessage("I'm having trouble connecting to the brain. Please try again in a bit!", 'ai');
-            }
-        }
+                if (!response.ok) throw new Error('Server responded with error');
 
-        function addMessage(text, sender) {
-            const chatBox = document.getElementById('chat-box');
-            const div = document.createElement('div');
-            div.className = `message ${sender}`;
-            div.innerText = text;
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
+                const data = await response.json();
+                
+                // Remove loader
+                const loader = document.getElementById(loaderId);
+                if (loader) loader.remove();
+
+                if (data.reply) {
+                    appendMessage(data.reply, 'ai');
+                } else {
+                    appendMessage("The AI returned an empty response.", 'ai');
+                }
+            } catch (err) {
+                const loader = document.getElementById(loaderId);
+                if (loader) loader.remove();
+                appendMessage("Error: Could not reach the chatbot service.", 'ai');
+            } finally {
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                messageInput.focus();
+            }
+        });
+
+        // Focus input on load
+        window.onload = () => messageInput.focus();
     </script>
 </body>
-
 </html>
