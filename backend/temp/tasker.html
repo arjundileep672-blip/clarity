@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Deconstructor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
             --bg-color: #fcfaf7;
@@ -12,110 +12,78 @@
             --text-main: #2d2d2d;
             --accent: #4a7c59;
         }
-
-        body {
-            background-color: var(--bg-color);
-            padding: 40px 20px;
-            font-family: sans-serif;
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 600px;
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        }
-
-        .back-link {
-            text-decoration: none;
-            color: #888;
-            display: block;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            margin-bottom: 24px;
-            font-size: 1.5rem;
-        }
-
-        .session-info {
-            font-size: 0.8rem;
-            color: #888;
-            margin-bottom: 20px;
-        }
-
-        .steps-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .step-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 16px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .step-item:last-child {
-            border-bottom: none;
-        }
-
-        input[type="checkbox"] {
-            margin-top: 4px;
-            width: 20px;
-            height: 20px;
-        }
+        body { background-color: var(--bg-color); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 
-<body>
-    <div class="container">
-        <a href="/" class="back-link">← Home</a>
-        <h1>Task Deconstructor</h1>
-        <div class="session-info" id="session-display">Session ID: </div>
-
-        <div id="steps-container">
-            <h3>Your Steps:</h3>
-            <ul class="steps-list" id="steps-list">
-                <!-- Steps will be loaded here -->
-                <li class="step-item">Loading steps...</li>
-            </ul>
+<body class="p-6 md:p-12 flex justify-center text-slate-800">
+    <div class="w-full max-w-xl bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50">
+        <a href="/" class="text-sm text-slate-400 hover:text-slate-600 transition-colors mb-6 inline-block">← Home</a>
+        
+        <div id="loading-state" class="py-20 text-center space-y-4">
+            <div class="inline-block w-8 h-8 border-4 border-slate-200 border-t-emerald-600 rounded-full animate-spin"></div>
+            <p class="text-slate-500 font-medium">Deconstructing your task...</p>
         </div>
 
-        <button id="done-btn" onclick="markComplete()"
-            style="margin-top: 30px; background: var(--accent); color: white; border: none; width: 100%; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer;">DONE</button>
+        <div id="content-state" class="hidden">
+            <h1 id="task-title" class="text-2xl font-bold mb-2 text-slate-900 leading-tight">Task Title</h1>
+            <div class="text-[10px] font-mono text-slate-300 mb-8 uppercase tracking-widest" id="session-display">Session: </div>
+
+            <div class="space-y-1" id="steps-list">
+                <!-- Steps injected here -->
+            </div>
+
+            <button id="done-btn" onclick="markComplete()"
+                class="mt-10 w-full bg-emerald-700 text-white py-4 rounded-2xl font-bold text-lg hover:bg-emerald-800 active:scale-[0.98] transition-all shadow-lg shadow-emerald-100 disabled:opacity-50">
+                MARK AS DONE
+            </button>
+        </div>
     </div>
 
     <script>
         const sessionId = window.location.pathname.split('/').pop();
-        document.getElementById('session-display').innerText += sessionId;
+        const sessionDisplay = document.getElementById('session-display');
+        const loadingState = document.getElementById('loading-state');
+        const contentState = document.getElementById('content-state');
+        const taskTitleEl = document.getElementById('task-title');
+        const stepsListEl = document.getElementById('steps-list');
 
-        // In a real app, we would fetch the steps using the sessionId
-        // For this demo, we'll simulate the load
-        setTimeout(() => {
-            const mockSteps = [
-                "Find all trash and put it in a bag",
-                "Clear items off the floor",
-                "Make the bed",
-                "Dust the desk surfaces"
-            ];
-            const list = document.getElementById('steps-list');
-            list.innerHTML = "";
-            mockSteps.forEach(step => {
-                const li = document.createElement('li');
-                li.className = 'step-item';
-                li.innerHTML = `<input type="checkbox"> <span>${step}</span>`;
-                list.appendChild(li);
-            });
-        }, 1000);
+        sessionDisplay.innerText += sessionId.split('-')[0] + '...';
+
+        async function fetchTaskDetails() {
+            try {
+                const response = await fetch(`/api/tasker/details/${sessionId}`);
+                if (!response.ok) throw new Error("Failed to load task");
+                
+                const data = await response.json();
+                
+                taskTitleEl.innerText = data.task_title;
+                stepsListEl.innerHTML = "";
+                
+                data.steps.forEach(step => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-start gap-4 p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors group';
+                    div.innerHTML = `
+                        <input type="checkbox" class="mt-1 w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" ${step.is_completed ? 'checked' : ''}>
+                        <span class="text-slate-700 leading-relaxed font-medium group-hover:text-slate-900 transition-colors">${step.step_text}</span>
+                    `;
+                    stepsListEl.appendChild(div);
+                });
+
+                loadingState.classList.add('hidden');
+                contentState.classList.remove('hidden');
+            } catch (error) {
+                console.error(error);
+                loadingState.innerHTML = `<p class="text-red-500">Error loading task. Please try again.</p>`;
+            }
+        }
 
         async function markComplete() {
+            const btn = document.getElementById('done-btn');
+            btn.disabled = true;
+            btn.innerText = "Finalizing...";
+            
             try {
                 const response = await fetch(`/api/tasker/done/${sessionId}`, {
                     method: 'POST'
@@ -124,13 +92,19 @@
                 if (data.status === 'ok') {
                     window.location.href = "/";
                 } else {
-                    alert("Error finalizing session: " + (data.message || "Unknown error"));
+                    alert("Error: " + (data.message || "Unknown error"));
+                    btn.disabled = false;
+                    btn.innerText = "MARK AS DONE";
                 }
             } catch (error) {
-                alert("Failed to finalize session. Is the backend running?");
+                alert("Failed to connect to server.");
+                btn.disabled = false;
+                btn.innerText = "MARK AS DONE";
             }
         }
+
+        // Initialize
+        fetchTaskDetails();
     </script>
 </body>
-
 </html>
