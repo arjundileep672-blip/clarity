@@ -40,3 +40,5 @@ uvicorn==0.40.0
 uvloop==0.22.1
 watchfiles==1.1.1
 websockets==16.0
+google-genai==1.60.0
+genkit-ai==0.0.1.dev1

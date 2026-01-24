@@ -4,9 +4,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env file BEFORE importing other modules
-# This makes os.getenv("GEMINI_API_KEY") available in app/chatbot.py
+# 1. Load your .env file
 load_dotenv()
+
+# 2. MAPPING (This fixes the Genkit error)
+# Genkit looks for GOOGLE_GENAI_API_KEY. We map your existing key to it.
+if os.getenv("GEMINI_API_KEY"):
+    os.environ["GOOGLE_GENAI_API_KEY"] = os.getenv("GEMINI_API_KEY")
 
 from app import tasker, paragraph, chatbot
 from app.database import init_db
@@ -29,7 +33,6 @@ async def read_index():
 async def read_input():
     return HTMLResponse(content=Path("temp/input.html").read_text())
 
-# Navigation Flow: Redirects to the chatbot start logic
 @app.get("/chatbot")
 async def start_chatbot_redirect():
     from fastapi.responses import RedirectResponse
