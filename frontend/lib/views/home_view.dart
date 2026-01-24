@@ -4,9 +4,11 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/app_card.dart';
 import '../widgets/panic_button.dart';
-import 'task_input_view.dart';
+import 'task_deconstructor_view.dart';
 import 'panic_view.dart';
-// import '../viewmodels/home_viewmodel.dart'; // basic version doesn't strictly need it if no complex state
+import 'sensory_reader_view.dart';
+import 'socratic_buddy_view.dart';
+import 'settings_view.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -14,6 +16,22 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Clarity'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_rounded),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsView()),
+              );
+            },
+            iconSize: 28,
+            tooltip: 'Settings',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -47,7 +65,7 @@ class HomeView extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const TaskInputView(),
+                          builder: (context) => const TaskDeconstructorView(),
                         ),
                       );
                     },
@@ -63,7 +81,12 @@ class HomeView extends StatelessWidget {
                         'Sensory-friendly reading with customizable settings',
                     iconColor: AppColors.secondary,
                     onTap: () {
-                      _showComingSoonDialog(context, 'Sensory-Safe Reader');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SensoryReaderView(),
+                        ),
+                      );
                     },
                   ),
 
@@ -77,7 +100,12 @@ class HomeView extends StatelessWidget {
                         'Get step-by-step help through guided questions',
                     iconColor: AppColors.accent,
                     onTap: () {
-                      _showComingSoonDialog(context, 'Socratic Buddy');
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SocraticBuddyView(),
+                        ),
+                      );
                     },
                   ),
 
@@ -98,28 +126,6 @@ class HomeView extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showComingSoonDialog(BuildContext context, String feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
-        ),
-        title: Text('Coming Soon', style: AppTextStyles.title),
-        content: Text(
-          '$feature is currently under development. Stay tuned!',
-          style: AppTextStyles.body,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Got it'),
-          ),
-        ],
       ),
     );
   }
