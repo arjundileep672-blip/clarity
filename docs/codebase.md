@@ -1,4 +1,4 @@
-
+```
 clarity/ (project root)
 │
 ├── backend/ (fastapi)
@@ -166,3 +166,4 @@ clarity/ (project root)
 │   └── pubspec.yaml (dependencies, assets, fonts)
 │
 └── README.md (project overview + run instructions)
+```
