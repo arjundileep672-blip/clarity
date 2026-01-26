@@ -156,6 +156,7 @@ clarity/
 MODULE 1 – TASK DECONSTRUCTOR
 ----------------------------
 
+```
 UI FLOW (Flutter only):
 home_screen.dart
   -> tasker_screen.dart
@@ -174,6 +175,7 @@ tasker_screen.dart
       -> api_service receives response
   -> loading state ends
   -> tasker_result_screen.dart displays data
+```
 
 MODULE 2 – SENSORY SAFE READER
 -----------------------------
