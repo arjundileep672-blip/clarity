@@ -1,61 +1,59 @@
 # Task Deconstructor
 tasks
 -----
-id                INTEGER  PRIMARY KEY AUTOINCREMENT
-session_id        TEXT     NOT NULL        -- groups the task to a session
-
-input_method      TEXT     NOT NULL        -- paragraph | audio | photo
-input_data        TEXT     NOT NULL        -- final processed text
-
-task_title        TEXT                     -- short AI-generated title
-status            TEXT     NOT NULL        -- active | completed
-
-created_at        DATETIME NOT NULL
-completed_at      DATETIME                 -- NULL until task finishes
+| Column Name  | Type     | Constraints                | Description                    |
+| ------------ | -------- | -------------------------- | ------------------------------ |
+| id           | INTEGER  | PRIMARY KEY, AUTOINCREMENT | Unique task ID                 |
+| session_id   | TEXT     | NOT NULL                   | Groups tasks under one session |
+| input_method | TEXT     | NOT NULL                   | paragraph | audio | photo      |
+| input_data   | TEXT     | NOT NULL                   | Final processed input text     |
+| task_title   | TEXT     | —                          | Short AI-generated task title  |
+| status       | TEXT     | NOT NULL                   | active | completed             |
+| created_at   | DATETIME | NOT NULL                   | Task creation time             |
+| completed_at | DATETIME | NULLABLE                   | Set when task is completed     |
 
 task_steps
 ----------
-id                INTEGER  PRIMARY KEY AUTOINCREMENT
-task_id           INTEGER  NOT NULL        -- FK → tasks.id
-
-step_index        INTEGER  NOT NULL        -- execution order
-step_text         TEXT     NOT NULL        -- instruction
-
-is_completed      BOOLEAN  NOT NULL        -- checkbox state
-status            TEXT     NOT NULL        -- active | inactive
-
-created_at        DATETIME NOT NULL
-completed_at      DATETIME                 -- NULL until checked
+| Column Name  | Type     | Constraints                | Description        |
+| ------------ | -------- | -------------------------- | ------------------ |
+| id           | INTEGER  | PRIMARY KEY, AUTOINCREMENT | Unique step ID     |
+| task_id      | INTEGER  | NOT NULL (FK → tasks.id)   | Parent task        |
+| step_index   | INTEGER  | NOT NULL                   | Execution order    |
+| step_text    | TEXT     | NOT NULL                   | Instruction text   |
+| is_completed | BOOLEAN  | NOT NULL                   | Checkbox state     |
+| status       | TEXT     | NOT NULL                   | active | inactive  |
+| created_at   | DATETIME | NOT NULL                   | Step creation time |
+| completed_at | DATETIME | NULLABLE                   | Set when checked   |
 
 # Sensory-Safe Reader
 reader_sessions
 ---------------
-id                INTEGER  PRIMARY KEY AUTOINCREMENT
-session_id        TEXT     NOT NULL
-
-input_method      TEXT     NOT NULL        -- paragraph | audio | photo
-input_text        TEXT     NOT NULL        -- processed input text
-
-output_text       TEXT     NOT NULL        -- mixed adapted content
-
-created_at        DATETIME NOT NULL
+| Column Name  | Type     | Constraints                | Description                 |
+| ------------ | -------- | -------------------------- | --------------------------- |
+| id           | INTEGER  | PRIMARY KEY, AUTOINCREMENT | Session record ID           |
+| session_id   | TEXT     | NOT NULL                   | Links to frontend session   |
+| input_method | TEXT     | NOT NULL                   | paragraph | audio | photo   |
+| input_text   | TEXT     | NOT NULL                   | Processed input text        |
+| output_text  | TEXT     | NOT NULL                   | Sensory-safe adapted output |
+| created_at   | DATETIME | NOT NULL                   | Creation timestamp          |
 
 # Socratic Buddy
 chat_sessions
 -------------
-id                TEXT     PRIMARY KEY      -- UUID
-module            TEXT     NOT NULL         -- "chatbot"
-status            TEXT     NOT NULL         -- active | ended
-
-created_at        DATETIME NOT NULL
-ended_at          DATETIME
+| Column Name | Type     | Constraints        | Description        |
+| ----------- | -------- | ------------------ | ------------------ |
+| id          | TEXT     | PRIMARY KEY (UUID) | Chat session ID    |
+| module      | TEXT     | NOT NULL           | "chatbot"          |
+| status      | TEXT     | NOT NULL           | active | ended     |
+| created_at  | DATETIME | NOT NULL           | Session start time |
+| ended_at    | DATETIME | NULLABLE           | Session end time   |
 
 chat_messages
 -------------
-id                INTEGER  PRIMARY KEY AUTOINCREMENT
-session_id        TEXT     NOT NULL          -- FK → chat_sessions.id
-
-sender            TEXT     NOT NULL          -- user | ai
-message_text      TEXT     NOT NULL
-
-created_at        DATETIME NOT NULL
+| Column Name  | Type     | Constraints                      | Description       |
+| ------------ | -------- | -------------------------------- | ----------------- |
+| id           | INTEGER  | PRIMARY KEY, AUTOINCREMENT       | Message ID        |
+| session_id   | TEXT     | NOT NULL (FK → chat_sessions.id) | Chat session      |
+| sender       | TEXT     | NOT NULL                         | user | ai         |
+| message_text | TEXT     | NOT NULL                         | Message content   |
+| created_at   | DATETIME | NOT NULL                         | Message timestamp |
